@@ -17,17 +17,8 @@ env:
 jobs:
   # ==================== Windows 构建 ====================
   build-Windows:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            name: x64
-          - arch: arm64
-            name: ARM64
-
     runs-on: windows-latest
-    name: 构建 Windows (${{ matrix.name }})
+    name: 构建 Windows (x64)
 
     steps:
       - name: 检出代码
@@ -42,7 +33,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: 构建并打包 Windows 安装程序
-        run: yarn build && yarn dist:win --${{ matrix.arch }}
+        run: yarn build && yarn dist:win --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TOONFLOW_LICENSE_SERVER_URL: ${{ secrets.TOONFLOW_LICENSE_SERVER_URL }}
@@ -51,7 +42,39 @@ jobs:
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: windows-${{ matrix.arch }}
+          name: windows-x64
+          path: dist/*.exe
+          retention-days: 7
+
+  # Windows ARM64 — 实验性构建，失败不阻断发布
+  build-Windows-ARM64:
+    runs-on: windows-latest
+    name: 构建 Windows (ARM64 实验性)
+    continue-on-error: true
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 安装依赖
+        run: yarn install --frozen-lockfile
+
+      - name: 构建并打包 Windows ARM64
+        run: yarn build && yarn dist:win --arm64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOONFLOW_LICENSE_SERVER_URL: ${{ secrets.TOONFLOW_LICENSE_SERVER_URL }}
+          TOONFLOW_LICENSE_PUBLIC_KEY: ${{ secrets.TOONFLOW_LICENSE_PUBLIC_KEY }}
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64
           path: dist/*.exe
           retention-days: 7
 
